@@ -1,0 +1,75 @@
+{% extends "network/layout.html" %}
+
+{% block body %}
+    <script>
+        function getCookie(name){
+            const value = `; ${document.cookie}`;
+            const parts = value.split(`; ${name}=`)
+            if(parts.length==2) return parts.pop().split(`;`).shift();
+        }
+
+        function like(id){
+            const likeButton = document.getElementById(`like_button_${id}`);
+
+            fetch (`/likedPost/${id}`, {
+                method: "POST", 
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': getCookie('csrftoken')
+
+                },
+                body: JSON.stringify({})
+            })
+            .then(response => response.json())
+            .then(result => {
+                if (result.liked) {
+                    likeButton.innerHTML = `Unlike ❤️ ${result.likeCount}`;
+                } else {
+                    likeButton.innerHTML = `Like ❤️ ${result.likeCount}`;
+                }
+            })
+        }
+    </script>
+    <div style="padding: 20px;">
+        <h1>Following</h1>
+
+        <div class="my-3 mx-5 border" style="padding: 10px;">
+            {% for post in posts_per_page %}
+                <div class="mx-3" style="padding: 20px; border-bottom: 1px solid lightgray;">
+                    <h4> <a href="{% url 'profile' user_id=post.user.id %}">@{{ post.user.username }}</a></h4>
+                    <h5>{{ post.content }}</h5 >
+                    <p style="color:gray">{{ post.date }}</p>
+                    <div>
+                        <button id="like_button_{{ post.id }}" type="button" class="btn btn-outline-info" onclick="like('{{ post.id }}')">
+                            {% if user.is_authenticated %}
+                                {% if user in post.liked.all %}
+                                    Unlike ❤️ {{ post.liked.count }}
+                                {% else %}
+                                    Like ❤️ {{ post.liked.count }} 
+                                {% endif %}
+
+                            {% else %}
+                                    ❤️ {{ post.liked.count }}
+                            {% endif %}
+                        </button>
+                    </div>
+                </div>
+                
+            {% endfor %}     
+        </div>
+       
+        <nav aria-label="Page navigation example">
+            <ul class="pagination d-flex justify-content-center">
+                {% if posts_per_page.has_previous %}
+                    <li class="page-item"><a class="page-link" href="?page={{ posts_per_page.privious_page_number }}">Previous</a></li>
+                {% endif %} 
+
+                {% if posts_per_page.has_next %}
+                    <li class="page-item"><a class="page-link" href="?page={{ posts_per_page.next_page_number }}">Next</a></li>
+                {% endif %}
+            </ul>
+          </nav>
+
+    </div>
+    
+{% endblock %}
